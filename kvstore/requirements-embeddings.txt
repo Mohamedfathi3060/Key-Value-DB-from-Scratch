@@ -1,0 +1,2 @@
+# Optional: for semantic search (search by meaning)
+sentence-transformers>=2.2.0

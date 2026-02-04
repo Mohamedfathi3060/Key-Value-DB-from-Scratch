@@ -1,0 +1,267 @@
+# VERSION 1
+
+Benchmark: Single Writes (empty dataset)
+==================================================
+Total Operations: 1,000
+Total Time:       0.456s
+Throughput:       2,193 ops/sec
+
+Latency:
+  Average:        0.456 ms
+  P50:            0.427 ms
+  P95:            0.585 ms
+  P99:            0.754 ms
+
+
+Benchmark: Single Writes (+10000 pre-populated keys)
+==================================================
+Total Operations: 1,000
+Total Time:       0.504s
+Throughput:       1,982 ops/sec
+
+Latency:
+  Average:        0.504 ms
+  P50:            0.472 ms
+  P95:            0.678 ms
+  P99:            0.747 ms
+
+
+Benchmark: Single Writes (+50000 pre-populated keys)
+==================================================
+Total Operations: 1,000
+Total Time:       2.214s
+Throughput:       452 ops/sec
+
+Latency:
+  Average:        2.213 ms
+  P50:            2.147 ms
+  P95:            2.935 ms
+  P99:            3.630 ms
+
+
+Benchmark: Single Reads
+==================================================
+Total Operations: 5,000
+Total Time:       0.343s
+Throughput:       14,581 ops/sec
+
+Latency:
+  Average:        0.068 ms
+  P50:            0.064 ms
+  P95:            0.104 ms
+  P99:            0.164 ms
+
+
+Benchmark: Bulk Writes (batch_size=100)
+==================================================
+Total Operations: 10,000
+Total Time:       0.253s
+Throughput:       39,469 ops/sec
+
+Latency:
+  Average:        2.484 ms
+  P50:            2.398 ms
+  P95:            3.215 ms
+  P99:            4.008 ms
+
+
+Benchmark: Mixed Workload (80% reads)
+==================================================
+Total Operations: 3,000
+Total Time:       1.317s
+Throughput:       2,278 ops/sec
+
+Latency:
+  Average:        0.439 ms
+  P50:            0.071 ms
+  P95:            1.991 ms
+  P99:            2.179 ms
+
+
+Benchmark: Concurrent Writes (4 threads)
+==================================================
+Total Operations: 1,000
+Total Time:       2.385s
+Throughput:       419 ops/sec
+
+Latency:
+  Average:        9.492 ms
+  P50:            8.062 ms
+  P95:            10.058 ms
+  P99:            10.579 ms
+
+
+Benchmark: Large Value Writes (10KB values)
+==================================================
+Total Operations: 50
+Total Time:       0.450s
+Throughput:       111 ops/sec
+
+Latency:
+  Average:        8.999 ms
+  P50:            2.118 ms
+  P95:            3.545 ms
+  P99:            340.970 ms
+
+
+============================================================
+SUMMARY
+============================================================
+Benchmark                                     Ops/sec   P99 (ms)
+--------------------------------------------------------------
+Single Writes (empty dataset)                   2,193      0.754
+Single Writes (+10000 pre-populated keys)        1,982      0.747
+Single Writes (+50000 pre-populated keys)          452      3.630
+Single Reads                                   14,581      0.164
+Bulk Writes (batch_size=100)                   39,469      4.008
+Mixed Workload (80% reads)                      2,278      2.179
+Concurrent Writes (4 threads)                     419     10.579
+Large Value Writes (10KB values)                  111    340.970
+
+============================================================
+DURABILITY CRASH TEST
+============================================================
+Durability Crash Test
+==================================================
+Acknowledged writes: 575
+Lost after restart: 0
+Loss rate: 0.0000%
+[Server] Stopping...
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+######################################
+Clusters Test
+######################################
+PS \kvstore> python -m unittest test_cluster -v
+test_01_primary_accepts_writes_and_reads 
+(test_cluster.TestClusterReplicationAndFailover.test_01_primary_accepts_writes_and_reads)
+Writes and reads go to primary only. ... ok
+
+test_02_replication_primary_has_data_after_writes 
+(test_cluster.TestClusterReplicationAndFailover.test_02_replication_primary_has_data_after_writes)
+After writes to primary, primary has the data (replication source). ... ok
+
+test_03_secondary_rejects_client_writes 
+(test_cluster.TestClusterReplicationAndFailover.test_03_secondary_rejects_client_writes)
+Secondaries reject client writes (redirect or error). ... ok
+
+test_04_failover_election_new_primary_has_data 
+(test_cluster.TestClusterReplicationAndFailover.test_04_failover_election_new_primary_has_data)
+Kill primary process; after election, new primary has previous data and accepts writes. ... ok
+
+test_05_stats_show_role (test_cluster.TestClusterReplicationAndFailover.test_05_stats_show_role)
+Stats from primary include role and primary_id. ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.147s
+OK
+############################################
+testing Indexes
+############################################
+PS D:\ITI_Ai_Intake46\DataBase_NOSQL\FInal_Project\kvstore> python .\test_indexing.py
+test_fulltext_case_insensitive (__main__.TestIndexing.test_fulltext_case_insensitive)
+Test that full-text search is case-insensitive. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64872)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64872)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_fulltext_search (__main__.TestIndexing.test_fulltext_search)
+Test full-text search. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64873)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64873)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_index_update_on_delete (__main__.TestIndexing.test_index_update_on_delete)
+Test that indexes are updated when keys are deleted. ... [KVStore] Starting recovery from test_index_data...      
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64874)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64874)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_index_update_on_overwrite (__main__.TestIndexing.test_index_update_on_overwrite)
+Test that indexes are updated when values are overwritten. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64875)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64875)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_value_index (__main__.TestIndexing.test_value_index)
+Test searching by value. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64876)
+[Server] Stopping...
+[KVStore] Closing...
+[Server] Client disconnected: ('127.0.0.1', 64876)
+[KVStore] Closed
+[Server] Stopped
+ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 4.146s
+
+OK
+
+########################################
+Word Embdeddings
+########################################
+
+PS D:\ITI_Ai_Intake46\DataBase_NOSQL\FInal_Project\kvstore> python .\test_semantic_search.py
+test_semantic_search_ordering (__main__.TestSemanticSearch.test_semantic_search_ordering)
+Results are ordered by score descending. ... [KVStore] Starting recovery from test_semantic_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 61753)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 61753)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_semantic_search_threshold (__main__.TestSemanticSearch.test_semantic_search_threshold)
+Results have scores above the given threshold. ... [KVStore] Starting recovery from test_semantic_data... 
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 58130)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 58130)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_semantic_search_top_k (__main__.TestSemanticSearch.test_semantic_search_top_k)
+Semantic search returns at most k results above threshold. ... [KVStore] Starting recovery from test_semantic_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 58132)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 58132)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.480s
+
+OK
+#########################################
