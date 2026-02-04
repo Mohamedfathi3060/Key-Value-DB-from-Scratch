@@ -16,8 +16,127 @@ import os
 import threading
 import time
 import struct
+import re
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Set
+from collections import defaultdict
+
+try:
+    from embedding_index import EmbeddingIndex, EmbeddingUnavailableError
+except ImportError:
+    EmbeddingIndex = None  # type: ignore
+    EmbeddingUnavailableError = Exception  # type: ignore
+
+
+class IndexManager:
+    """
+    Manages indexes for the KV store:
+    - Value index: maps values to sets of keys (for finding keys by value)
+    - Inverted index: maps tokens (words) to sets of keys (for full-text search)
+    """
+    
+    def __init__(self):
+        # Value index: value -> set of keys
+        self.value_index: Dict[str, Set[str]] = defaultdict(set)
+        # Inverted index: token -> set of keys
+        self.inverted_index: Dict[str, Set[str]] = defaultdict(set)
+        self.lock = threading.RLock()
+    
+    def _tokenize(self, text: str) -> Set[str]:
+        """Extract tokens (words) from text for inverted index."""
+        if not isinstance(text, str):
+            return set()
+        # Convert to lowercase and extract words
+        tokens = re.findall(r'\b\w+\b', text.lower())
+        return set(tokens)
+    
+    def index_key(self, key: str, value: Any, old_value: Any = None) -> None:
+        """
+        Add or update index entries for a key-value pair.
+        If old_value is provided, remove old index entries first.
+        """
+        with self.lock:
+            # Remove old index entries if updating
+            if old_value is not None:
+                self._remove_from_indexes(key, old_value)
+            
+            # Add to value index (only for hashable values)
+            try:
+                value_str = str(value)
+                self.value_index[value_str].add(key)
+            except (TypeError, ValueError):
+                pass
+            
+            # Add to inverted index (for string values)
+            if isinstance(value, str):
+                tokens = self._tokenize(value)
+                for token in tokens:
+                    self.inverted_index[token].add(key)
+    
+    def _remove_from_indexes(self, key: str, value: Any) -> None:
+        """Remove index entries for a key-value pair."""
+        # Remove from value index
+        try:
+            value_str = str(value)
+            if value_str in self.value_index:
+                self.value_index[value_str].discard(key)
+                if not self.value_index[value_str]:
+                    del self.value_index[value_str]
+        except (TypeError, ValueError):
+            pass
+        
+        # Remove from inverted index
+        if isinstance(value, str):
+            tokens = self._tokenize(value)
+            for token in tokens:
+                if token in self.inverted_index:
+                    self.inverted_index[token].discard(key)
+                    if not self.inverted_index[token]:
+                        del self.inverted_index[token]
+    
+    def unindex_key(self, key: str, value: Any) -> None:
+        """Remove all index entries for a key."""
+        self._remove_from_indexes(key, value)
+    
+    def search_by_value(self, value: Any) -> List[str]:
+        """Find all keys that have a specific value."""
+        with self.lock:
+            try:
+                value_str = str(value)
+                return list(self.value_index.get(value_str, set()))
+            except (TypeError, ValueError):
+                return []
+    
+    def fulltext_search(self, query: str) -> List[str]:
+        """
+        Full-text search: find keys containing all query tokens.
+        Returns keys that contain all tokens in the query.
+        """
+        with self.lock:
+            query_tokens = self._tokenize(query)
+            if not query_tokens:
+                return []
+            
+            # Convert set to list for iteration
+            token_list = list(query_tokens)
+            
+            # Start with keys for the first token
+            result = self.inverted_index.get(token_list[0], set()).copy()
+            
+            # Intersect with keys for remaining tokens (AND search)
+            for token in token_list[1:]:
+                token_keys = self.inverted_index.get(token, set())
+                result &= token_keys
+            
+            return list(result)
+    
+    def rebuild_from_data(self, data: Dict[str, Any]) -> None:
+        """Rebuild indexes from a data dictionary (e.g., after recovery)."""
+        with self.lock:
+            self.value_index.clear()
+            self.inverted_index.clear()
+            for key, value in data.items():
+                self.index_key(key, value)
 
 
 class WriteAheadLog:
@@ -167,6 +286,8 @@ class KVStore:
         
         self.wal = WriteAheadLog(self.data_dir / "wal.log")
         self.data: Dict[str, Any] = {}
+        self.indexes = IndexManager()
+        self.embedding_index = EmbeddingIndex() if EmbeddingIndex else None
         self.lock = threading.RLock()
         self.operation_count = 0
         
@@ -177,6 +298,12 @@ class KVStore:
         print(f"[KVStore] Starting recovery from {self.data_dir}...")
         start = time.time()
         self.data = self.wal.replay()
+        self.indexes.rebuild_from_data(self.data)
+        if self.embedding_index is not None:
+            try:
+                self.embedding_index.rebuild_from_data(self.data)
+            except Exception:
+                pass
         elapsed = time.time() - start
         print(f"[KVStore] Recovered {len(self.data)} keys in {elapsed:.3f}s")
     
@@ -195,8 +322,16 @@ class KVStore:
         with self.lock:
             # Write to WAL first (Write-Ahead)
             self.wal.append("set", key, value)
+            # Get old value for index update
+            old_value = self.data.get(key)
             # Then update in-memory state
             self.data[key] = value
+            self.indexes.index_key(key, value, old_value=old_value)
+            if self.embedding_index is not None:
+                try:
+                    self.embedding_index.index_key(key, value, old_value=old_value)
+                except Exception:
+                    pass
             self._maybe_compact()
             return True
     
@@ -209,9 +344,15 @@ class KVStore:
         """Delete a key. Returns True if key existed."""
         with self.lock:
             if key in self.data:
+                old_value = self.data[key]
                 # Write to WAL first
                 self.wal.append("delete", key)
-                # Then update in-memory state
+                self.indexes.unindex_key(key, old_value)
+                if self.embedding_index is not None:
+                    try:
+                        self.embedding_index.unindex_key(key, old_value)
+                    except Exception:
+                        pass
                 del self.data[key]
                 self._maybe_compact()
                 return True
@@ -230,10 +371,16 @@ class KVStore:
             operations = [("set", k, v) for k, v in items]
             self.wal.append_batch(operations)
             
-            # Update in-memory state
+            # Update in-memory state and indexes
             for key, value in items:
+                old_value = self.data.get(key)
                 self.data[key] = value
-            
+                self.indexes.index_key(key, value, old_value=old_value)
+                if self.embedding_index is not None:
+                    try:
+                        self.embedding_index.index_key(key, value, old_value=old_value)
+                    except Exception:
+                        pass
             self._maybe_compact()
             return True
     
@@ -251,6 +398,12 @@ class KVStore:
         """Replace store state with snapshot and compact WAL (for replication catch-up)."""
         with self.lock:
             self.data = dict(data)
+            self.indexes.rebuild_from_data(self.data)
+            if self.embedding_index is not None:
+                try:
+                    self.embedding_index.rebuild_from_data(self.data)
+                except Exception:
+                    pass
             self.wal.compact(self.data)
     
     def size(self) -> int:
@@ -325,6 +478,36 @@ class KVServer:
                     "keys": self.store.size(),
                     "wal_size": self.store.wal.get_size()
                 }
+            
+            elif op == "search_by_value":
+                value = request.get("value")
+                try:
+                    keys = self.store.indexes.search_by_value(value)
+                    return {"status": "ok", "keys": list(keys), "count": len(keys)}
+                except Exception as e:
+                    return {"status": "error", "message": str(e)}
+            
+            elif op == "fulltext_search":
+                query = request.get("query", "")
+                try:
+                    keys = self.store.indexes.fulltext_search(query)
+                    return {"status": "ok", "keys": list(keys), "count": len(keys)}
+                except Exception as e:
+                    return {"status": "error", "message": str(e)}
+            
+            elif op == "semantic_search":
+                query = request.get("query", "")
+                k = request.get("k", 10)
+                threshold = request.get("threshold", 0.0)
+                if self.store.embedding_index is None:
+                    return {"status": "error", "message": "Embedding index not available (install sentence-transformers)"}
+                try:
+                    results = self.store.embedding_index.semantic_search(query, k=int(k), threshold=float(threshold))
+                    return {"status": "ok", "results": [{"key": key, "score": score} for key, score in results], "count": len(results)}
+                except EmbeddingUnavailableError as e:
+                    return {"status": "error", "message": str(e)}
+                except Exception as e:
+                    return {"status": "error", "message": str(e)}
             
             else:
                 return {"status": "error", "message": f"Unknown operation: {op}"}

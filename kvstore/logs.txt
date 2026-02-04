@@ -157,3 +157,111 @@ Stats from primary include role and primary_id. ... ok
 Ran 5 tests in 3.147s
 OK
 ############################################
+testing Indexes
+############################################
+PS D:\ITI_Ai_Intake46\DataBase_NOSQL\FInal_Project\kvstore> python .\test_indexing.py
+test_fulltext_case_insensitive (__main__.TestIndexing.test_fulltext_case_insensitive)
+Test that full-text search is case-insensitive. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64872)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64872)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_fulltext_search (__main__.TestIndexing.test_fulltext_search)
+Test full-text search. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64873)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64873)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_index_update_on_delete (__main__.TestIndexing.test_index_update_on_delete)
+Test that indexes are updated when keys are deleted. ... [KVStore] Starting recovery from test_index_data...      
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64874)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64874)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_index_update_on_overwrite (__main__.TestIndexing.test_index_update_on_overwrite)
+Test that indexes are updated when values are overwritten. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64875)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 64875)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_value_index (__main__.TestIndexing.test_value_index)
+Test searching by value. ... [KVStore] Starting recovery from test_index_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9800
+[Server] Client connected: ('127.0.0.1', 64876)
+[Server] Stopping...
+[KVStore] Closing...
+[Server] Client disconnected: ('127.0.0.1', 64876)
+[KVStore] Closed
+[Server] Stopped
+ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 4.146s
+
+OK
+
+########################################
+Word Embdeddings
+########################################
+
+PS D:\ITI_Ai_Intake46\DataBase_NOSQL\FInal_Project\kvstore> python .\test_semantic_search.py
+test_semantic_search_ordering (__main__.TestSemanticSearch.test_semantic_search_ordering)
+Results are ordered by score descending. ... [KVStore] Starting recovery from test_semantic_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 61753)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 61753)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_semantic_search_threshold (__main__.TestSemanticSearch.test_semantic_search_threshold)
+Results have scores above the given threshold. ... [KVStore] Starting recovery from test_semantic_data... 
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 58130)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 58130)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+test_semantic_search_top_k (__main__.TestSemanticSearch.test_semantic_search_top_k)
+Semantic search returns at most k results above threshold. ... [KVStore] Starting recovery from test_semantic_data...
+[KVStore] Recovered 0 keys in 0.000s
+[Server] Listening on localhost:9801
+[Server] Client connected: ('127.0.0.1', 58132)
+[Server] Stopping...
+[Server] Client disconnected: ('127.0.0.1', 58132)
+[KVStore] Closing...
+[KVStore] Closed
+[Server] Stopped
+ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.480s
+
+OK
+#########################################

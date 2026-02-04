@@ -138,6 +138,28 @@ class ClusterNode:
                     "role": self._role.value,
                     "primary_id": self._primary_id,
                 }
+            elif op == "search_by_value":
+                value = request.get("value")
+                keys = self._store.indexes.search_by_value(value)
+                return {"status": "ok", "keys": keys, "count": len(keys)}
+            elif op == "fulltext_search":
+                query = request.get("query", "")
+                keys = self._store.indexes.fulltext_search(query)
+                return {"status": "ok", "keys": keys, "count": len(keys)}
+            elif op == "semantic_search":
+                query = request.get("query", "")
+                k = request.get("k", 10)
+                threshold = request.get("threshold", 0.0)
+                if self._store.embedding_index is None:
+                    return {"status": "error", "message": "Embedding index not available (install sentence-transformers)"}
+                try:
+                    from embedding_index import EmbeddingUnavailableError
+                    results = self._store.embedding_index.semantic_search(query, k=int(k), threshold=float(threshold))
+                    return {"status": "ok", "results": [{"key": key, "score": score} for key, score in results], "count": len(results)}
+                except EmbeddingUnavailableError as e:
+                    return {"status": "error", "message": str(e)}
+                except Exception as e:
+                    return {"status": "error", "message": str(e)}
             else:
                 return {"status": "error", "message": f"Unknown operation: {op}"}
         except KeyError as e:

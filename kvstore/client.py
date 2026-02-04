@@ -229,6 +229,60 @@ class KVClient:
             }
         raise OperationError(response.get("message", "Unknown error"))
     
+    def search_by_value(self, value: Any) -> List[str]:
+        """
+        Search for keys that have a specific value.
+        
+        Args:
+            value: The value to search for
+            
+        Returns:
+            List of keys that have this value
+        """
+        response = self._send_request({"op": "search_by_value", "value": value})
+        if response["status"] == "ok":
+            return response.get("keys", [])
+        raise OperationError(response.get("message", "Unknown error"))
+    
+    def fulltext_search(self, query: str) -> List[str]:
+        """
+        Full-text search: find keys containing all words in the query.
+        
+        Args:
+            query: Search query string (words separated by spaces)
+            
+        Returns:
+            List of keys whose values contain all query words
+        """
+        response = self._send_request({"op": "fulltext_search", "query": query})
+        if response["status"] == "ok":
+            return response.get("keys", [])
+        raise OperationError(response.get("message", "Unknown error"))
+    
+    def semantic_search(self, query: str, k: int = 10, threshold: float = 0.0) -> List[Tuple[str, float]]:
+        """
+        Search by meaning using word embeddings (all-MiniLM-L6-v2).
+        Returns top-k keys whose values are most similar to the query, above the threshold.
+        Requires server to have sentence-transformers installed.
+        
+        Args:
+            query: Natural language search query
+            k: Maximum number of results to return
+            threshold: Minimum similarity score (0.0 to 1.0)
+            
+        Returns:
+            List of (key, score) tuples, sorted by score descending
+        """
+        response = self._send_request({
+            "op": "semantic_search",
+            "query": query,
+            "k": k,
+            "threshold": threshold,
+        })
+        if response["status"] == "ok":
+            return [(r["key"], r["score"]) for r in response.get("results", [])]
+        raise OperationError(response.get("message", "Unknown error"))
+    
     def close(self):
         """Close the connection."""
         if self.socket:
