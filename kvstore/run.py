@@ -7,6 +7,7 @@ Usage:
     python run.py test                # Run tests
     python run.py benchmark           # Run benchmarks (starts own server)
     python run.py benchmark --port X  # Run benchmarks against existing server
+    python run.py benchmark-acid      # Run ACID benchmarks (isolation + atomicity kill)
     python run.py demo                # Run a quick demo
 """
 
@@ -72,6 +73,36 @@ def run_benchmarks(port=None):
             time.sleep(0.3)
             if os.path.exists(test_dir):
                 shutil.rmtree(test_dir)
+
+
+def run_benchmark_acid(port=None):
+    """Run ACID benchmarks (isolation + bulk atomicity under SIGKILL)."""
+    from benchmark_ACID import run_all_acid_benchmarks
+    
+    if port is not None:
+        run_all_acid_benchmarks("localhost", port, run_isolation=True, run_atomicity_kill=True)
+        return
+    
+    from server import KVServer
+    
+    test_dir = "benchmark_acid_data"
+    port = 9500
+    
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    
+    server = KVServer(port=port, data_dir=test_dir)
+    server_thread = threading.Thread(target=server.start, daemon=True)
+    server_thread.start()
+    time.sleep(0.5)
+    
+    try:
+        run_all_acid_benchmarks("localhost", port, run_isolation=True, run_atomicity_kill=True)
+    finally:
+        server.stop()
+        time.sleep(0.3)
+        if os.path.exists(test_dir):
+            shutil.rmtree(test_dir)
 
 
 def run_demo():
@@ -189,6 +220,13 @@ def main():
             if idx + 1 < len(sys.argv):
                 port = int(sys.argv[idx + 1])
         run_benchmarks(port)
+    elif command == "benchmark-acid":
+        port = None
+        if "--port" in sys.argv:
+            idx = sys.argv.index("--port")
+            if idx + 1 < len(sys.argv):
+                port = int(sys.argv[idx + 1])
+        run_benchmark_acid(port)
     elif command == "demo":
         run_demo()
     else:
