@@ -8,6 +8,7 @@ Usage:
     python run.py benchmark           # Run benchmarks (starts own server)
     python run.py benchmark --port X  # Run benchmarks against existing server
     python run.py benchmark-acid      # Run ACID benchmarks (isolation + atomicity kill)
+    python run.py cluster             # Start 3-node cluster (primary + 2 secondaries)
     python run.py demo                # Run a quick demo
 """
 
@@ -73,6 +74,47 @@ def run_benchmarks(port=None):
             time.sleep(0.3)
             if os.path.exists(test_dir):
                 shutil.rmtree(test_dir)
+
+
+def run_cluster():
+    """Start the 3-node cluster (1 primary, 2 secondaries)."""
+    from cluster_server import DEFAULT_NODES, ClusterNode
+    
+    data_base = "cluster_data"
+    if os.path.exists(data_base):
+        shutil.rmtree(data_base)
+    os.makedirs(data_base, exist_ok=True)
+    
+    nodes_config = dict(DEFAULT_NODES)
+    nodes = []
+    for node_id in range(3):
+        data_dir = os.path.join(data_base, f"node_{node_id}")
+        node = ClusterNode(
+            node_id=node_id,
+            nodes=nodes_config,
+            initial_primary_id=0,
+            data_dir=data_dir,
+        )
+        nodes.append(node)
+    
+    threads = []
+    for node in nodes:
+        t = threading.Thread(target=node.start, daemon=True)
+        t.start()
+        threads.append(t)
+    
+    print("Cluster running (ports 9010, 9011, 9012). Primary: node 0 (9010). Ctrl+C to stop.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        for node in nodes:
+            node.stop()
+        time.sleep(0.5)
+        if os.path.exists(data_base):
+            shutil.rmtree(data_base)
 
 
 def run_benchmark_acid(port=None):
@@ -227,6 +269,8 @@ def main():
             if idx + 1 < len(sys.argv):
                 port = int(sys.argv[idx + 1])
         run_benchmark_acid(port)
+    elif command == "cluster":
+        run_cluster()
     elif command == "demo":
         run_demo()
     else:

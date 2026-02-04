@@ -131,3 +131,29 @@ Loss rate: 0.0000%
 [KVStore] Closed
 [Server] Stopped
 ######################################
+Clusters Test
+######################################
+PS \kvstore> python -m unittest test_cluster -v
+test_01_primary_accepts_writes_and_reads 
+(test_cluster.TestClusterReplicationAndFailover.test_01_primary_accepts_writes_and_reads)
+Writes and reads go to primary only. ... ok
+
+test_02_replication_primary_has_data_after_writes 
+(test_cluster.TestClusterReplicationAndFailover.test_02_replication_primary_has_data_after_writes)
+After writes to primary, primary has the data (replication source). ... ok
+
+test_03_secondary_rejects_client_writes 
+(test_cluster.TestClusterReplicationAndFailover.test_03_secondary_rejects_client_writes)
+Secondaries reject client writes (redirect or error). ... ok
+
+test_04_failover_election_new_primary_has_data 
+(test_cluster.TestClusterReplicationAndFailover.test_04_failover_election_new_primary_has_data)
+Kill primary process; after election, new primary has previous data and accepts writes. ... ok
+
+test_05_stats_show_role (test_cluster.TestClusterReplicationAndFailover.test_05_stats_show_role)
+Stats from primary include role and primary_id. ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.147s
+OK
+############################################

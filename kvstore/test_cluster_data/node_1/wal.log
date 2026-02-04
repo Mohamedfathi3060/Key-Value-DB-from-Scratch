@@ -1,0 +1,5 @@
+{"op": "set", "key": "cluster_key_1", "value": "value_1", "ts": 1770233959527008100}
+{"op": "set", "key": "repl_key", "value": "repl_value", "ts": 1770233959527042000}
+{"op": "set", "key": "failover_key", "value": "failover_value", "ts": 1770233959527048000}
+{"op": "set", "key": "another_key", "value": 42, "ts": 1770233959527052800}
+{"op": "set", "key": "after_failover", "value": "ok", "ts": 1770233959527057200}

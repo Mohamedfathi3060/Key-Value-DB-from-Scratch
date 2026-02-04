@@ -241,6 +241,17 @@ class KVStore:
         """Get all keys."""
         with self.lock:
             return list(self.data.keys())
+
+    def get_snapshot(self) -> Dict[str, Any]:
+        """Return a copy of the current key-value state (for replication)."""
+        with self.lock:
+            return dict(self.data)
+
+    def apply_snapshot(self, data: Dict[str, Any]) -> None:
+        """Replace store state with snapshot and compact WAL (for replication catch-up)."""
+        with self.lock:
+            self.data = dict(data)
+            self.wal.compact(self.data)
     
     def size(self) -> int:
         """Get the number of keys in the store."""

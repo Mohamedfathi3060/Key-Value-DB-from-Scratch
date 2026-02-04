@@ -1,0 +1,13 @@
+{"op": "set", "key": "cluster_key_1", "value": "value_1", "ts": 1770233856663866500}
+{"op": "set", "key": "repl_key", "value": "repl_value", "ts": 1770233856689318800}
+{"op": "set", "key": "failover_key", "value": "failover_value", "ts": 1770233856738983100}
+{"op": "set", "key": "another_key", "value": 42, "ts": 1770233856762188700}
+{"op": "set", "key": "cluster_key_1", "value": "value_1", "ts": 1770233915487600800}
+{"op": "set", "key": "repl_key", "value": "repl_value", "ts": 1770233915505172700}
+{"op": "set", "key": "failover_key", "value": "failover_value", "ts": 1770233915556824700}
+{"op": "set", "key": "another_key", "value": 42, "ts": 1770233915570854500}
+{"op": "set", "key": "cluster_key_1", "value": "value_1", "ts": 1770233956243356500}
+{"op": "set", "key": "repl_key", "value": "repl_value", "ts": 1770233956286693100}
+{"op": "set", "key": "failover_key", "value": "failover_value", "ts": 1770233956363421800}
+{"op": "set", "key": "another_key", "value": 42, "ts": 1770233956371996700}
+{"op": "set", "key": "after_failover", "value": "ok", "ts": 1770233958419661000}
