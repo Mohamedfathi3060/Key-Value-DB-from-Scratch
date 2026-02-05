@@ -29,7 +29,7 @@ class KVClient:
     Client for the Key-Value Store.
     
     Usage:
-        client = KVClient(host="localhost", port=9000)
+        client = KVClient(host="localhost", port=9010)
         client.set("key", "value")
         value = client.get("key")
         client.close()
@@ -39,7 +39,7 @@ class KVClient:
             client.set("key", "value")
     """
     
-    def __init__(self, host: str = "localhost", port: int = 9000, timeout: float = 30.0):
+    def __init__(self, host: str = "localhost", port: int = 9010, timeout: float = 30.0):
         """
         Initialize the client.
         

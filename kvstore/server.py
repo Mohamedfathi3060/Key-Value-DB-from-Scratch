@@ -428,7 +428,7 @@ class KVServer:
     Response: {"status": "ok|error|not_found", "value": "...", "message": "..."}
     """
     
-    def __init__(self, host: str = "localhost", port: int = 9000, data_dir: str = "data"):
+    def __init__(self, host: str = "localhost", port: int = 9010, data_dir: str = "data"):
         self.host = host
         self.port = port
         self.store = KVStore(data_dir)
@@ -610,7 +610,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="Key-Value Store Server")
     parser.add_argument("--host", default="localhost", help="Host to bind to")
-    parser.add_argument("--port", type=int, default=9000, help="Port to bind to")
+    parser.add_argument("--port", type=int, default=9010, help="Port to bind to")
     parser.add_argument("--data-dir", default="data", help="Data directory for persistence")
     args = parser.parse_args()
     
